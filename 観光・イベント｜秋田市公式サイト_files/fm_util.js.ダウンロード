@@ -1,0 +1,113 @@
+/*------------------------------------------------------------------------------
+    フォントサイズ変更＆背景色変更スクリプト DBPS連動バージョン
+	[注]DBPSテンプレート内に背景色を設定するCSSのURLを設定する必要があります
+--------------------------------------------------------------------------------*/
+
+/* ------ 設定 [共通]------ */
+var uniq_name = "fcmn_"	//クッキー名称の冠[変更可]
+var keepdays = 0;			//クッキーの保存期間[変更可]
+
+/* ------ 設定 [フォントサイズ変更]------ */
+var step = 10;			//このパーセント刻みで文字の大小を変えます[変更可]
+var defSize = 100;		//初期値（パーセント）[変更可]
+var cookie_fs = uniq_name + "fontsize";
+
+/* ------ 設定 [背景色変更]------ */
+var cookie_bgurl = uniq_name + "bgurl";
+var cookie_bgid = uniq_name + "bgid";
+
+/*------------------------------------------------------------------------------*/
+var crtSize = defSize;
+function util_init(){
+	//フォント設定が残っていたら反映する
+	var tmp_fs= getCookie(cookie_fs);
+	if (tmp_fs) {
+		crtSize = parseInt(tmp_fs);
+		fsChange(crtSize);
+	}
+
+	//背景設定が残っていたら反映する
+	var tmp_bgid= getCookie(cookie_bgid);
+	var tmp_bgurl= getCookie(cookie_bgurl);
+	if (tmp_bgid && tmp_bgurl) {
+		bgChange(tmp_bgid,tmp_bgurl);
+	}
+}
+
+function getCookie(key){
+	var sCookie = document.cookie;
+	var aData = sCookie.split(";");
+	var oExp = new RegExp(" ", "g");
+	key = key.replace(oExp, ""); 
+	var i = 0;
+	while (aData[i]) {
+		var aWord = aData[i].split("=");
+		aWord[0] = aWord[0].replace(oExp, ""); 
+		if (key == aWord[0]) return unescape(aWord[1]);
+		if (++i >= aData.length) break;
+	}
+	return "";
+}
+
+function setCookie(key,value){
+	var str = key + "=" + escape(value) + ";";
+	str += "path=/;";
+	if (keepdays != 0) {
+		var dt = new Date();
+		dt.setDate(dt.getDate() + parseInt(keepdays));
+		str += "expires=" + dt.toGMTString() + ";";
+	}
+	document.cookie = str;
+}
+
+function deleteCookie(key){
+	var str = key + "=;";
+	str += "path=/;";
+	var dt = new Date();
+	dt.setDate(dt.getDate() -1);
+	str += "expires=" + dt.toGMTString() + ";";
+	document.cookie = str;
+}
+
+function fsChange(arg){
+	//未対応ブラウザ対応
+	if(!document.body){
+		s_message("n_use");
+	}else{
+		//現在のフォントサイズ値を変更
+		if(arg == "d"){
+			crtSize = defSize;
+			deleteCookie(cookie_fs);
+		}
+		else if(arg == "s"){
+			if (parseInt(crtSize) > parseInt(step) ){
+				crtSize -= parseInt(step);
+				setCookie(cookie_fs,crtSize);
+			}
+		}
+		else if(arg == "l"){
+			crtSize += parseInt(step);
+			setCookie(cookie_fs,crtSize);
+		}
+		//フォントサイズを変更
+		document.body.style.fontSize = crtSize + "%";
+	}
+}
+
+function bgChange(node_id,url_id){
+	var target = document.getElementById(node_id);
+	//未対応ブラウザ対応
+	if(!target || !target.cloneNode){
+		s_message("n_use");
+	}else{
+		target.href = eval(url_id);				//DBPSでは相対パスでURLを設定するので、毎回パスを受け取りなおします
+		setCookie(cookie_bgurl,url_id);
+		setCookie(cookie_bgid,node_id);
+	}
+}
+
+function s_message(arg){
+	if(arg == "n_use"){
+		alert("お使いのブラウザではこの機能を使用できません");
+	}
+}

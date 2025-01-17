@@ -1,0 +1,325 @@
+//------------------------------------------------------------------------------
+//	スマホ表示機能
+//	Copyright (C) 2011 FUTUREINN CO., LTD. All Rights Reserved.
+//------------------------------------------------------------------------------
+//-------------------------------------------------
+// ▼各種設定 変更可能エリア ここから
+//-------------------------------------------------
+FI.KEEP_DAYS = 100;								//クッキーの保存日数
+//-------------------------------------------------
+// ▲各種設定 変更可能エリア ここまで
+//-------------------------------------------------
+FI.sm = false;									//スマホ表示フラグ
+FI.COOKIE_OPT ={ expires: FI.KEEP_DAYS, path: '/' };
+
+	//ユーザーエージェントでスマホかどうかの判定
+	var agent = navigator.userAgent;
+	if(agent.search(/iPhone/) != -1  || agent.search(/iPod/) != -1 || agent.search(/Android/) != -1){
+		FI.sm = true;
+	}
+
+	(function(){
+		var $ = FI.jQuery;
+
+		/**
+		 * jQuery Cookie plugin
+		 *
+		 * Copyright (c) 2010 Klaus Hartl (stilbuero.de)
+		 * Dual licensed under the MIT and GPL licenses:
+		 * http://www.opensource.org/licenses/mit-license.php
+		 * http://www.gnu.org/licenses/gpl.html
+		 * -------------------------------------------------
+		 * 2011 jQuery.noConflict(true)するため、同じ名前空間に取込
+		 *
+		 */
+		$.cookie = function (key, value, options) {
+		    // key and at least value given, set cookie...
+		    if (arguments.length > 1 && String(value) !== "[object Object]") {
+		        options = $.extend({}, options);
+		        if (value === null || value === undefined) {
+		            options.expires = -1;
+		        }
+		        if (typeof options.expires === 'number') {
+		            var days = options.expires, t = options.expires = new Date();
+		            t.setDate(t.getDate() + days);
+		        }
+		        value = String(value);
+		        return (document.cookie = [
+		            encodeURIComponent(key), '=',
+		            options.raw ? value : encodeURIComponent(value),
+		            options.expires ? '; expires=' + options.expires.toUTCString() : '', // use expires attribute, max-age is not supported by IE
+		            options.path ? '; path=' + options.path : '',
+		            options.domain ? '; domain=' + options.domain : '',
+		            options.secure ? '; secure' : ''
+		        ].join(''));
+		    }
+		    // key and possibly options given, get cookie...
+		    options = value || {};
+		    var result, decode = options.raw ? function (s) { return s; } : decodeURIComponent;
+		    return (result = new RegExp('(?:^|; )' + encodeURIComponent(key) + '=([^;]*)').exec(document.cookie)) ? decode(result[1]) : null;
+		};
+		//ここからオリジナル-----------------------------------------------------------------------------------
+
+		// クッキーの内容を取得
+		if($.cookie("view_mode") == "smp"){
+			FI.sm = true;
+		}else if($.cookie("view_mode") == "pc"){
+			FI.sm = false;
+		}
+
+		$(function (){
+			//「pconly」クラスのオブジェクトを削除
+			if(FI.sm){
+				//-------------------------------------------------
+
+				$('.pconly').each(function(){
+						$(this).remove();
+				});
+				$('#viewmode_smp').attr('aria-current', 'page');
+
+				// 表示位置の変更
+				if($("#sitesearch").size() > 0){
+					// スマホの場合は、#tlogoの下にsitesearchを表示
+					$sitesearch = $('#sitesearch');
+					$("#tlogo").after($sitesearch);
+				}
+				//-------------------------------------------------
+				// 【専用】グローバルナビの画像をテキストに変換
+				$('#gnavi').find('img').each(function(){
+					var param1 = $(this).attr("alt");
+					$(this).replaceWith(param1);
+				});
+				$('#gnavi').find('li').each(function(){
+					if($(this).children('a').text().indexOf("トップページ") !== -1){
+						$(this).remove();
+					}
+				});
+
+				//-------------------------------------------------
+				// グローバルナビ ドロップダウンメニュー
+				$(function(){
+					if($('#gnavi')){
+
+						//折りたたみ用の外枠、ボタン追加
+						$('#util').wrap('<div id="smpmenu" />').wrap('<div id="gnavismp" aria-hidden="true" class="clearfix" />');
+						$('<button class="hnplus" aria-controls="gnavismp" aria-expanded="false">メニュー</button>').insertBefore('#gnavismp');
+
+						//詳細ページの場合
+						if($('#gnavibg').size() > 0){
+							//グローバルナビを折りたたみの中に移動
+							$gnavi = $('#gnavibg');
+							$("#util").after($gnavi);
+						}
+
+						//折りたたみ処理
+						$('#gnavismp').each(function() {
+							var hnFlg = false;
+							var $this = $(this);
+							var $ul = $('#gnavismp');
+							var $button = $('#smpmenu button');
+
+							if($(this).children('*').hasClass("hnplus") ){
+								$ul.hide();
+								hnFlg = false;
+							}
+							//表示
+							$button.click(function() {
+								$('#smpmenu button').toggleClass("hnplus").toggleClass("hnminus");
+								hnFlg = !hnFlg;
+								if(hnFlg){
+									$("#smpmenu").css('width','100%');
+									$("#smpmenu button").attr('aria-expanded', 'true');
+									$("#gnavismp").attr('aria-hidden', 'false');
+								}
+								$ul.slideToggle('normal', function() {
+									if(!hnFlg){
+										$("#smpmenu").css('width','auto');
+										$("#smpmenu button").attr('aria-expanded', 'false');
+										$("#gnavismp").attr('aria-hidden', 'true');
+									}
+								});
+								return false;
+							});
+						});
+					}
+				});
+
+				//-------------------------------------------------
+				// 折りたたみのための特別な処理
+				$(function(){
+
+					$('.articleall').each(function(){
+						//折りたたみたくない要素にはクラス「.disp」を設定
+						var $ul = $(this).children('*').not('.plus,.minus,.disp');
+						if($(this).children('*').hasClass("plus") ){
+							$ul.hide();
+						}
+						$('.plus,.minus',this).click(function(){
+							$(this).toggleClass("plus").toggleClass("minus");
+							$ul.slideToggle();
+
+						});
+					});
+				});
+
+				//-------------------------------------------------
+				// スクロールメニューA
+				if($("#scroll_a").size() > 0){
+
+					var mimgFlg = false;
+					var orgWidth = 0;	//オリジナルの幅
+					var orgHeight = $("#scroll_a .photoleft").height();	//オリジナルの高さ
+					var windowWidth = 0;	//スマホウィンドウの幅
+					var imgHeight = 0;	//新しく設定する高さ
+
+					var btnHeight = $("#scroll_a .paging").outerHeight({margin:true});	//ボタンエリアの高さ
+
+					if($("#petit").size() > 0){
+						orgWidth = 950;		//汎用トップ
+					}else{
+						orgWidth = 950;		//トップ
+					}
+
+					var mimgheight = function(){
+						if(!mimgFlg){
+
+							windowWidth = $(window).width();
+
+							//画像の高さを設定
+							if(windowWidth < orgWidth){
+								imgHeight = orgHeight * windowWidth / orgWidth;
+							}else{
+								imgHeight = orgHeight;
+							}
+							$('#scroll_a .photoleft').css("height",imgHeight);
+
+							//ボタンの位置を設定
+							if($("#scroll_a .btn").size() > 0){
+								$("#scroll_a .btn , #scroll_a .paging").css("position","absolute");
+								$("#scroll_a .btn , #scroll_a .paging").css("top",imgHeight);
+								$("#scroll_a .paging").css("left",$("#scroll_a .btn").outerWidth({margin:true}));
+							}
+
+							$('#scroll_a').css("height",imgHeight+btnHeight);
+
+							mimgFlg = true;
+						}
+
+					};
+
+					$(window).load(function() {
+						mimgheight();
+					});
+
+					$(window).on('orientationchange resize',function(){
+						mimgFlg = false;
+						mimgheight();
+					});
+				}
+
+				//-------------------------------------------------
+				// 【汎用トップ】スクロールメニューB
+				if($("#scroll_b").size() > 0){
+
+					var mimgFlg = false;
+					var orgWidth = 0;	//オリジナルの幅
+					var orgHeight = $("#scroll_b .photoleft").height();	//オリジナルの高さ
+					var windowWidth = 0;	//スマホウィンドウの幅
+					var imgHeight = 0;	//新しく設定する高さ
+					var txtHeight = 0;
+
+					var btnHeight = $("#scroll_b .paging").outerHeight({margin:true});	//ボタンエリアの高さ
+
+					if($("#petit").size() > 0){
+						orgWidth = 570;		//汎用トップ
+					}else{
+						orgWidth = 570;		//トップ
+					}
+
+					var mimgheight = function(){
+						if(!mimgFlg){
+
+							windowWidth = $(window).width();
+
+							//画像の高さを設定
+							if(windowWidth < orgWidth){
+								imgHeight = orgHeight * windowWidth / orgWidth;
+							}else{
+								imgHeight = orgHeight;
+							}
+							$('#scroll_b .photoleft').css("height",imgHeight);
+
+							$("#scroll_b .imgtxt").each(function(){
+								if(txtHeight < $('#scroll_b .imgtxt').outerHeight({margin:true})){
+									txtHeight = $('#scroll_b .imgtxt').outerHeight({margin:true});
+								}
+							});
+
+							//テキストの位置を設定
+							$("#scroll_b .imgtxt").css("position","absolute");
+							$('#scroll_b .imgtxt').css("top",imgHeight);
+							$('#scroll_b .imgtxt').css("left","0");
+
+							//ボタンの位置を設定
+							if ($("#scroll_b .main").size() == 1){
+								$("#scroll_b .btn , #scroll_b .paging").hide();
+								btnHeight = 0;
+							}else{
+								$("#scroll_b .btn , #scroll_b .paging").css("position","absolute");
+								$("#scroll_b .btn , #scroll_b .paging").css("top",imgHeight+txtHeight);
+								$("#scroll_b .paging").css("left",$("#scroll_b .btn").outerWidth({margin:true}));
+							}
+
+							$('#scroll_b .window').css("height",imgHeight+btnHeight+txtHeight);
+
+							mimgFlg = true;
+						}
+					};
+
+					$(window).load(function() {
+						mimgheight();
+					});
+
+					$(window).on('orientationchange resize',function(){
+						mimgFlg = false;
+						mimgheight();
+					});
+				}
+
+				//-------------------------------------------------
+				// イベントカレンダー
+				if($("#eventcalendar").size() > 0){
+
+					//イベント検索ボタンを移動
+					if($("#eventlink").size() > 0){
+						// スマホの場合は、#eventcalendarの下に#eventlinkを表示
+						$eventlink = $('#eventlink');
+						$("#eventcalendar").before($eventlink);
+					}
+
+					if($('#eventcard').size() > 0){
+						$('body').addClass('smpev');
+					}
+
+				}
+
+				//-------------------------------------------------
+			}else{
+				$('#viewmode_pc').attr('aria-current', 'page');
+			}
+			//「PC」クリックイベント
+			$('#viewmode_pc').click(function(){
+				$.cookie("view_mode","pc",FI.COOKIE_OPT);
+				location.reload();
+			});
+			//「スマホ」クリックイベント
+			$('#viewmode_smp').click(function(){
+				$.cookie("view_mode","smp",FI.COOKIE_OPT);
+				location.reload();
+			});
+		});
+	})();
+	if(FI.sm){
+		document.write('<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=2.0,user-scalable=yes" />');
+		document.write('<link href="' + FI.smpcss + '" rel="stylesheet" type="text/css" />');
+	}

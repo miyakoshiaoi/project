@@ -1,0 +1,51 @@
+//本文へ
+(function(){
+var $ = FI.jQuery;
+$(function(){
+    $("#blockskip a").focus(function(){
+        $(this).addClass("show");
+    });
+    $("#blockskip a").blur(function(){
+        $(this).removeClass("show");
+    });
+});
+})();
+
+//マイページ
+(function(){
+var $ = FI.jQuery;
+	$(function() {
+		$('#mypage > h2') . click( function() {
+			$(this).next().toggle();
+    });
+});
+})();
+
+//大きな文字で印刷
+function printData(){
+var target = document.getElementById("printcss");
+target.href = target.href.replace("print_dummy","print_l");
+var printx = 0;
+var printSet = setInterval(function() {
+	printx++;
+	//終了条件
+	if (printx == 1) {
+		window.print();
+		target.href = target.href.replace("print_l","print_dummy");
+		clearInterval(printSet);
+	}
+}, 500);
+}
+
+//キャプションのある画像のアクセシビリティ対応
+(function(){
+var $ = FI.jQuery;
+$(function(){
+    $("figure").each(function(i){
+        $(this).attr("role","group");
+		i += 1;
+        $(this).attr("aria-labelledby","figimage" + i);
+        $(this).children("figcaption").attr("id","figimage" + i);
+    });
+});
+})();
